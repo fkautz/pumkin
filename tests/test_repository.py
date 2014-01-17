@@ -2,8 +2,8 @@ import os
 import tempfile
 import unittest
 import time
-from pumkin.errors import RepositoryExistsError, RepositoryDoesNotExistError
 
+from pumkin.errors import RepositoryExistsError, RepositoryDoesNotExistError
 from pumkin.repository import Repository
 
 
@@ -13,11 +13,11 @@ __author__ = 'fkautz'
 class TestUtils(object):
     @staticmethod
     def create_test_dir() -> tempfile.TemporaryDirectory:
-        dir = tempfile.TemporaryDirectory("pumkin")
-        with open(dir.name + "/hello.txt", 'w'):
+        tempdir = tempfile.TemporaryDirectory("pumkin")
+        with open(tempdir.name + "/hello.txt", 'w'):
             pass
 
-        return dir
+        return tempdir
 
     @staticmethod
     def destroy_test_dir(repo):
