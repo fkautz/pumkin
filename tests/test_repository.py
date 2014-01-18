@@ -16,7 +16,6 @@ class TestUtils(object):
         tempdir = tempfile.TemporaryDirectory("pumkin")
         with open(tempdir.name + "/hello.txt", 'w'):
             pass
-
         return tempdir
 
     @staticmethod
