@@ -1,3 +1,4 @@
+import hashlib
 import os
 import tempfile
 import unittest
@@ -77,8 +78,29 @@ class TestRepository(unittest.TestCase):
         Repository.sync(self.repo.name)
         dirs_after_second_sync = os.listdir(repo)
         self.assertGreater(len(dirs_after_second_sync), len(dirs_after_first_sync))
+        with open(self.repo.name + '/hello3.txt', 'w'):
+            pass
+        time.sleep(.01)  # prevent name collision in sync
+        Repository.sync(self.repo.name)
+        dirs_after_third_sync = os.listdir(repo)
+        self.assertGreater(len(dirs_after_third_sync), len(dirs_after_second_sync))
 
-    def test_sync_with_multiple_previous_syncs(self):
+    def test_sync_image_name_is_sha1sum(self):
+        Repository.create(self.repo.name)
+        images_directory = Repository.get_metadata_dir(self.repo.name) + "/images"
+        Repository.sync(self.repo.name)
+        image_file = os.listdir(images_directory)[0]
+        with open(os.path.join(images_directory, image_file), 'rb') as f:
+            blob = f.read()
+        summer = hashlib.sha1()
+        summer.update(blob)
+        digest = summer.hexdigest()
+        self.assertEquals(digest + ".tar.gz", image_file)
+
+    def test_sync_image_head_tagged(self):
+        pass
+
+    def test_sync_image_creates_manifest(self):
         pass
 
     def test_get_metadata_dir_throws_exception_if_not_repo(self):

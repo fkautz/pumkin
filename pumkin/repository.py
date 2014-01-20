@@ -1,6 +1,6 @@
+import hashlib
 import os
 import tarfile
-import time
 
 from pumkin.errors import RepositoryExistsError, RepositoryDoesNotExistError
 
@@ -39,7 +39,13 @@ class Repository(object):
             os.remove(tmp_image)
         with tarfile.open(tmp_image, "w:gz") as tar:
             tar.add(repo, arcname=os.path.basename(repo), filter=filter_pumkin_from_tar)
-        os.rename(tmp_image, metadata + "/images/" + str(int(time.time() * 1000)) + ".tar.gz")
+        m = hashlib.sha1()
+        with open(tmp_image, 'rb') as f:
+            blob = f.read(1024 * 1024 * 64)
+            if blob:
+                m.update(blob)
+        image_name = m.hexdigest()
+        os.rename(tmp_image, metadata + "/images/" + image_name + ".tar.gz")
 
     @staticmethod
     def exists(param):
