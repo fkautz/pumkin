@@ -67,30 +67,43 @@ class TestRepository(unittest.TestCase):
 
     def test_sync_with_previous_syncs(self):
         Repository.create(self.repo.name)
-        repo = Repository.get_metadata_dir(self.repo.name) + "/images"
-        dirs_before_sync = os.listdir(repo)
+        metadata_dir = Repository.get_metadata_dir(self.repo.name)
+        images_dir = os.path.join(metadata_dir, "images")
+        dirs_before_sync = os.listdir(images_dir)
         Repository.sync(self.repo.name)
-        dirs_after_first_sync = os.listdir(repo)
+        dirs_after_first_sync = os.listdir(images_dir)
         self.assertGreater(len(dirs_after_first_sync), len(dirs_before_sync))
         with open(self.repo.name + '/hello2.txt', 'w'):
             pass
         time.sleep(.01)  # prevent name collision in sync
         Repository.sync(self.repo.name)
-        dirs_after_second_sync = os.listdir(repo)
+        dirs_after_second_sync = os.listdir(images_dir)
         self.assertGreater(len(dirs_after_second_sync), len(dirs_after_first_sync))
         with open(self.repo.name + '/hello3.txt', 'w'):
             pass
         time.sleep(.01)  # prevent name collision in sync
         Repository.sync(self.repo.name)
-        dirs_after_third_sync = os.listdir(repo)
+        dirs_after_third_sync = os.listdir(images_dir)
         self.assertGreater(len(dirs_after_third_sync), len(dirs_after_second_sync))
+        digests = []
+        for current_dir in dirs_after_third_sync:
+            current_dir = current_dir.replace(".tar.gz", "")
+            digests.append(current_dir)
+        digests.sort()
+        with open(os.path.join(metadata_dir, 'COMMITS'), 'r') as f:
+            commits = f.read()
+            split_commits = commits.split('\n')
+            split_commits.sort()
+            print(split_commits)
+            print(digests)
+            self.assertListEqual(split_commits, digests)
 
     def test_sync_image_name_is_sha1sum(self):
         Repository.create(self.repo.name)
-        images_directory = Repository.get_metadata_dir(self.repo.name) + "/images"
+        images_dir = os.path.join(Repository.get_metadata_dir(self.repo.name), "images")
         Repository.sync(self.repo.name)
-        image_file = os.listdir(images_directory)[0]
-        with open(os.path.join(images_directory, image_file), 'rb') as f:
+        image_file = os.listdir(images_dir)[0]
+        with open(os.path.join(images_dir, image_file), 'rb') as f:
             blob = f.read()
         summer = hashlib.sha1()
         summer.update(blob)
@@ -98,7 +111,15 @@ class TestRepository(unittest.TestCase):
         self.assertEquals(digest + ".tar.gz", image_file)
 
     def test_sync_image_head_tagged(self):
-        pass
+        Repository.create(self.repo.name)
+        metadata_dir = Repository.get_metadata_dir(self.repo.name)
+        images_dir = os.path.join(metadata_dir, "images")
+        Repository.sync(self.repo.name)
+        image_file = os.listdir(images_dir)[0]
+        digest = image_file.replace(".tar.gz", "")
+        with open(os.path.join(metadata_dir, 'COMMITS'), 'r') as f:
+            head = f.read().strip()
+            self.assertEqual(digest, head)
 
     def test_sync_image_creates_manifest(self):
         pass

@@ -31,7 +31,6 @@ class Repository(object):
     def sync(repo):
         if not Repository.exists(repo):
             raise RepositoryDoesNotExistError(repo)
-
         metadata = Repository.get_metadata_dir(repo)
         # make tarball in .pumkin/images
         tmp_image = metadata + "/tmp.tar.gz"
@@ -44,8 +43,17 @@ class Repository(object):
             blob = f.read(1024 * 1024 * 64)
             if blob:
                 m.update(blob)
-        image_name = m.hexdigest()
-        os.rename(tmp_image, metadata + "/images/" + image_name + ".tar.gz")
+        digest = m.hexdigest()
+        os.rename(tmp_image, os.path.join(metadata, "images", digest + ".tar.gz"))
+        try:
+            with open(os.path.join(metadata, 'COMMITS'), 'r') as f:
+                old_commits = f.read()
+        except FileNotFoundError:
+            old_commits = ""
+        with open(os.path.join(metadata, "COMMITS"), "wb") as f:
+            if old_commits.strip() != "":
+                f.write(str.encode(old_commits + '\n'))
+            f.write(str.encode(digest))
 
     @staticmethod
     def exists(param):
